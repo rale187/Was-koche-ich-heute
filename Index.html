@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Was koche ich heute?</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#f3f4f6;
+color:#222
+}
+
+header{
+background:linear-gradient(135deg,#ff7a00,#ff3d00);
+color:white;
+padding:28px 16px;
+text-align:center
+}
+
+header h1{
+margin:0;
+font-size:30px
+}
+
+header p{
+margin:8px 0 0;
+font-size:16px
+}
+
+.container{
+max-width:760px;
+margin:auto;
+padding:15px
+}
+
+.card,.recipe{
+background:white;
+border-radius:20px;
+padding:20px;
+margin-bottom:18px;
+box-shadow:0 4px 15px rgba(0,0,0,.08)
+}
+
+h2{
+margin-top:0
+}
+
+input,select{
+width:100%;
+padding:13px;
+border:1px solid #ddd;
+border-radius:12px;
+font-size:16px;
+margin-bottom:10px
+}
+
+.ingredients{
+display:flex;
+flex-wrap:wrap;
+gap:8px
+}
+
+.ingredient{
+padding:10px 13px;
+border:2px solid #ddd;
+border-radius:30px;
+background:white;
+cursor:pointer
+}
+
+.ingredient.selected{
+background:#ff5a00;
+border-color:#ff5a00;
+color:white
+}
+
+button{
+width:100%;
+border:0;
+border-radius:13px;
+padding:14px;
+margin-top:9px;
+font-size:16px;
+font-weight:bold;
+background:#ff5a00;
+color:white
+}
+
+button.dark{
+background:#222
+}
+
+button.green{
+background:#159447
+}
+
+button.red{
+background:#d93636
+}
+
+button.favorite{
+background:#ffe5e5;
+color:#d00000
+}
+
+.filters{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px
+}
+
+.recipe h3{
+margin-top:0;
+font-size:22px
+}
+
+.info{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+color:#666;
+margin-bottom:12px
+}
+
+.badge{
+display:inline-block;
+padding:5px 9px;
+background:#eee;
+border-radius:20px;
+font-size:13px
+}
+
+.recipe ul,
+.recipe ol{
+padding-left:22px
+}
+
+.shop{
+display:flex;
+align-items:center;
+gap:8px;
+padding:11px 0;
+border-bottom:1px solid #eee
+}
+
+.shop input{
+width:20px;
+height:20px;
+margin:0
+}
+
+.shop.done span{
+text-decoration:line-through;
+color:#999
+}
+
+.delete{
+width:auto;
+padding:7px 10px;
+margin:0;
+margin-left:auto;
+font-size:13px
+}
+
+.empty{
+text-align:center;
+color:#777;
+padding:15px
+}
+
+.category-buttons{
+display:flex;
+gap:8px;
+overflow-x:auto;
+padding-bottom:5px
+}
+
+.category{
+white-space:nowrap;
+padding:9px 13px;
+border:2px solid #ddd;
+border-radius:25px;
+background:white
+}
+
+.category.active{
+background:#222;
+color:white
+}
+
+.portions{
+display:flex;
+align-items:center;
+gap:10px
+}
+
+.portions button{
+width:45px;
+margin:0;
+padding:10px
+}
+
+.portions span{
+font-weight:bold;
+font-size:18px
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🍳 Was koche ich heute?</h1>
+<p>Schnelle Gerichte unter 600 kcal</p>
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<h2>🔎 Rezept suchen</h2>
+
+<input
+id="search"
+placeholder="z.B. Hähnchen, Pasta, Reis..."
+oninput="showRecipes()">
+
+<div class="category-buttons">
+<button class="category active" onclick="setCategory('Alle',this)">Alle</button>
+<button class="category" onclick="setCategory('Hähnchen',this)">🍗 Hähnchen</button>
+<button class="category" onclick="setCategory('Pasta',this)">🍝 Pasta</button>
+<button class="category" onclick="setCategory('Reis',this)">🍚 Reis</button>
+<button class="category" onclick="setCategory('Wrap',this)">🌯 Wraps</button>
+<button class="category" onclick="setCategory('Salat',this)">🥗 Salat</button>
+<button class="category" onclick="setCategory('Ei',this)">🍳 Eier</button>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>⚙️ Filter</h2>
+
+<div class="filters">
+
+<div>
+<label>Max. kcal</label>
+<select id="calorieFilter" onchange="showRecipes()">
+<option value="600">600 kcal</option>
+<option value="500">500 kcal</option>
+<option value="400">400 kcal</option>
+<option value="300">300 kcal</option>
+</select>
+</div>
+
+<div>
+<label>Max. Zeit</label>
+<select id="timeFilter" onchange="showRecipes()">
+<option value="30">30 Minuten</option>
+<option value="20">20 Minuten</option>
+<option value="15">15 Minuten</option>
+<option value="10">10 Minuten</option>
+</select>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>🛒 Zutaten zuhause</h2>
+
+<div class="ingredients" id="ingredientButtons"></div>
+
+<button onclick="showRecipes()">🔎 Mit meinen Zutaten suchen</button>
+
+<button class="dark" onclick="randomRecipe()">🎲 Überrasche mich</button>
+
+</div>
+
+<div id="results"></div>
+
+<div class="card">
+
+<h2>🛒 Meine Einkaufsliste</h2>
+
+<div id="shoppingList"></div>
+
+<button class="red" onclick="clearShoppingList()">
+🗑️ Einkaufsliste leeren
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>❤️ Meine Favoriten</h2>
+
+<div id="favorites"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const recipes=[
+
+{
+name:"🍗 Chicken-Reis-Pfanne",
+category:"Hähnchen",
+time:20,
+calories:550,
+ingredients:[
+["Hähnchenbrust",150,"g"],
+["Reis",70,"g"],
+["Paprika",1,"Stück"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Hähnchen klein schneiden.","Paprika und Zwiebel schneiden.","Hähnchen anbraten.","Gemüse dazugeben.","Reis kochen und unterheben.","Würzen."]
+},
+
+{
+name:"🍝 Tomaten-Nudeln",
+category:"Pasta",
+time:15,
+calories:480,
+ingredients:[
+["Nudeln",80,"g"],
+["Tomaten",200,"g"],
+["Zwiebel",0.5,"Stück"],
+["Käse",30,"g"]
+],
+steps:["Nudeln kochen.","Zwiebel anbraten.","Tomaten dazugeben.","Nudeln unterheben.","Käse darüber geben."]
+},
+
+{
+name:"🌯 Chicken-Wrap",
+category:"Wrap",
+time:15,
+calories:490,
+ingredients:[
+["Hähnchenbrust",120,"g"],
+["Wrap",1,"Stück"],
+["Salat",50,"g"],
+["Tomaten",1,"Stück"]
+],
+steps:["Hähnchen braten.","Tomaten und Salat schneiden.","Wrap erwärmen.","Alles darauf verteilen.","Zusammenrollen."]
+},
+
+{
+name:"🍳 Rührei mit Tomaten",
+category:"Ei",
+time:10,
+calories:350,
+ingredients:[
+["Eier",3,"Stück"],
+["Tomaten",1,"Stück"],
+["Zwiebel",0.5,"Stück"],
+["Käse",20,"g"]
+],
+steps:["Eier verquirlen.","Zwiebel und Tomaten anbraten.","Eier dazugeben.","Käse hinzufügen.","Stocken lassen."]
+},
+
+{
+name:"🥔 Kartoffel-Hähnchen-Pfanne",
+category:"Hähnchen",
+time:25,
+calories:560,
+ingredients:[
+["Kartoffeln",250,"g"],
+["Hähnchenbrust",120,"g"],
+["Paprika",1,"Stück"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Kartoffeln klein schneiden.","Hähnchen anbraten.","Kartoffeln dazugeben.","Gemüse hinzufügen.","Alles goldbraun braten."]
+},
+
+{
+name:"🍚 Ei-Reis-Pfanne",
+category:"Reis",
+time:15,
+calories:450,
+ingredients:[
+["Reis",70,"g"],
+["Eier",2,"Stück"],
+["Erbsen",80,"g"],
+["Karotten",1,"Stück"]
+],
+steps:["Reis kochen.","Gemüse anbraten.","Eier dazugeben.","Reis unterheben.","Alles vermischen."]
+},
+
+{
+name:"🥗 Chicken-Salat",
+category:"Salat",
+time:15,
+calories:390,
+ingredients:[
+["Hähnchenbrust",120,"g"],
+["Salat",100,"g"],
+["Tomaten",100,"g"],
+["Gurke",0.5,"Stück"]
+],
+steps:["Hähnchen braten.","Salat waschen.","Gemüse schneiden.","Alles vermischen."]
+},
+
+{
+name:"🍝 Chicken-Nudeln",
+category:"Pasta",
+time:20,
+calories:570,
+ingredients:[
+["Nudeln",70,"g"],
+["Hähnchenbrust",120,"g"],
+["Paprika",1,"Stück"],
+["Käse",20,"g"]
+],
+steps:["Nudeln kochen.","Hähnchen braten.","Paprika dazugeben.","Nudeln unterheben.","Käse darüber geben."]
+},
+
+{
+name:"🌯 Thunfisch-Wrap",
+category:"Wrap",
+time:10,
+calories:430,
+ingredients:[
+["Wrap",1,"Stück"],
+["Thunfisch",100,"g"],
+["Salat",50,"g"],
+["Tomaten",1,"Stück"]
+],
+steps:["Thunfisch abtropfen.","Tomaten schneiden.","Wrap belegen.","Salat hinzufügen.","Zusammenrollen."]
+},
+
+{
+name:"🍳 Omelett mit Gemüse",
+category:"Ei",
+time:12,
+calories:370,
+ingredients:[
+["Eier",3,"Stück"],
+["Paprika",1,"Stück"],
+["Tomaten",1,"Stück"],
+["Käse",20,"g"]
+],
+steps:["Eier verquirlen.","Gemüse schneiden.","Gemüse braten.","Eier dazugeben.","Käse hinzufügen."]
+},
+
+{
+name:"🍗 Chicken-Curry",
+category:"Hähnchen",
+time:25,
+calories:590,
+ingredients:[
+["Hähnchenbrust",150,"g"],
+["Kokosmilch",100,"ml"],
+["Paprika",1,"Stück"],
+["Reis",60,"g"]
+],
+steps:["Hähnchen anbraten.","Paprika dazugeben.","Kokosmilch hinzufügen.","Curry würzen.","Mit Reis servieren."]
+},
+
+{
+name:"🥔 Kartoffel-Ei-Pfanne",
+category:"Ei",
+time:20,
+calories:500,
+ingredients:[
+["Kartoffeln",250,"g"],
+["Eier",2,"Stück"],
+["Zwiebel",1,"Stück"],
+["Käse",20,"g"]
+],
+steps:["Kartoffeln vorkochen.","Zwiebel anbraten.","Kartoffeln dazugeben.","Eier darüber geben.","Käse hinzufügen."]
+},
+
+{
+name:"🍅 Tomaten-Mozzarella-Salat",
+category:"Salat",
+time:10,
+calories:360,
+ingredients:[
+["Tomaten",250,"g"],
+["Mozzarella",100,"g"],
+["Salat",50,"g"]
+],
+steps:["Tomaten schneiden.","Mozzarella schneiden.","Alles anrichten.","Würzen."]
+},
+
+{
+name:"🍝 Thunfisch-Nudeln",
+category:"Pasta",
+time:15,
+calories:540,
+ingredients:[
+["Nudeln",80,"g"],
+["Thunfisch",100,"g"],
+["Tomaten",150,"g"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Nudeln kochen.","Zwiebel anbraten.","Tomaten hinzufügen.","Thunfisch dazugeben.","Nudeln unterheben."]
+},
+
+{
+name:"🍚 Chicken-Bowl",
+category:"Reis",
+time:20,
+calories:570,
+ingredients:[
+["Hähnchenbrust",120,"g"],
+["Reis",70,"g"],
+["Gurke",0.5,"Stück"],
+["Tomaten",1,"Stück"]
+],
+steps:["Reis kochen.","Hähnchen braten.","Gemüse schneiden.","Alles in einer Bowl anrichten."]
+},
+
+{
+name:"🌯 Gemüse-Wrap",
+category:"Wrap",
+time:10,
+calories:390,
+ingredients:[
+["Wrap",1,"Stück"],
+["Paprika",1,"Stück"],
+["Tomaten",1,"Stück"],
+["Salat",50,"g"],
+["Käse",30,"g"]
+],
+steps:["Gemüse schneiden.","Wrap erwärmen.","Gemüse darauf verteilen.","Käse dazugeben.","Rollen."]
+},
+
+{
+name:"🍳 Schinken-Omelett",
+category:"Ei",
+time:10,
+calories:420,
+ingredients:[
+["Eier",3,"Stück"],
+["Schinken",50,"g"],
+["Käse",20,"g"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Eier verquirlen.","Schinken und Zwiebel braten.","Eier darüber geben.","Käse hinzufügen."]
+},
+
+{
+name:"🍗 Chicken-Tomaten-Pfanne",
+category:"Hähnchen",
+time:20,
+calories:460,
+ingredients:[
+["Hähnchenbrust",150,"g"],
+["Tomaten",200,"g"],
+["Paprika",1,"Stück"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Hähnchen anbraten.","Gemüse schneiden.","Gemüse hinzufügen.","Alles garen.","Würzen."]
+},
+
+{
+name:"🥗 Thunfisch-Salat",
+category:"Salat",
+time:10,
+calories:330,
+ingredients:[
+["Thunfisch",100,"g"],
+["Salat",100,"g"],
+["Tomaten",1,"Stück"],
+["Gurke",0.5,"Stück"]
+],
+steps:["Salat waschen.","Gemüse schneiden.","Thunfisch abtropfen.","Alles vermischen."]
+},
+
+{
+name:"🍚 Gemüse-Reis",
+category:"Reis",
+time:20,
+calories:430,
+ingredients:[
+["Reis",70,"g"],
+["Paprika",1,"Stück"],
+["Karotten",1,"Stück"],
+["Erbsen",80,"g"]
+],
+steps:["Reis kochen.","Gemüse anbraten.","Reis hinzufügen.","Vermischen.","Würzen."]
+},
+
+{
+name:"🍝 Pesto-Nudeln",
+category:"Pasta",
+time:15,
+calories:560,
+ingredients:[
+["Nudeln",80,"g"],
+["Pesto",30,"g"],
+["Tomaten",100,"g"],
+["Parmesan",15,"g"]
+],
+steps:["Nudeln kochen.","Tomaten schneiden.","Nudeln mit Pesto vermischen.","Tomaten dazugeben.","Parmesan darüber geben."]
+},
+
+{
+name:"🌯 Chicken-Cheese-Wrap",
+category:"Wrap",
+time:15,
+calories:570,
+ingredients:[
+["Wrap",1,"Stück"],
+["Hähnchenbrust",120,"g"],
+["Käse",40,"g"],
+["Salat",50,"g"]
+],
+steps:["Hähnchen braten.","Wrap erwärmen.","Zutaten darauf verteilen.","Käse hinzufügen.","Rollen."]
+},
+
+{
+name:"🥔 Ofenkartoffel mit Quark",
+category:"Kartoffeln",
+time:30,
+calories:450,
+ingredients:[
+["Kartoffeln",300,"g"],
+["Quark",150,"g"],
+["Gurke",0.5,"Stück"]
+],
+steps:["Kartoffeln im Ofen garen.","Gurke schneiden.","Quark würzen.","Kartoffel mit Quark servieren."]
+},
+
+{
+name:"🍳 Ei-Sandwich",
+category:"Ei",
+time:10,
+calories:390,
+ingredients:[
+["Brot",2,"Scheiben"],
+["Eier",2,"Stück"],
+["Tomaten",1,"Stück"],
+["Salat",30,"g"]
+],
+steps:["Eier braten.","Brot toasten.","Tomaten schneiden.","Sandwich zusammenbauen."]
+},
+
+{
+name:"🍗 Hähnchen-Tomaten-Wrap",
+category:"Wrap",
+time:15,
+calories:480,
+ingredients:[
+["Wrap",1,"Stück"],
+["Hähnchenbrust",120,"g"],
+["Tomaten",1,"Stück"],
+["Salat",50,"g"]
+],
+steps:["Hähnchen braten.","Tomaten schneiden.","Wrap belegen.","Zusammenrollen."]
+},
+
+{
+name:"🍚 Hackfleisch-Reis-Pfanne",
+category:"Reis",
+time:25,
+calories:590,
+ingredients:[
+["Rinderhackfleisch",120,"g"],
+["Reis",60,"g"],
+["Paprika",1,"Stück"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Reis kochen.","Hackfleisch braten.","Gemüse hinzufügen.","Reis unterheben.","Würzen."]
+},
+
+{
+name:"🥗 Chicken-Caesar-Light",
+category:"Salat",
+time:15,
+calories:520,
+ingredients:[
+["Hähnchenbrust",120,"g"],
+["Salat",120,"g"],
+["Parmesan",15,"g"],
+["Brot",1,"Scheibe"]
+],
+steps:["Hähnchen braten.","Salat waschen.","Brot toasten.","Alles vermischen.","Parmesan darüber geben."]
+},
+
+{
+name:"🍝 Knoblauch-Nudeln",
+category:"Pasta",
+time:15,
+calories:470,
+ingredients:[
+["Nudeln",80,"g"],
+["Knoblauch",2,"Zehen"],
+["Parmesan",20,"g"]
+],
+steps:["Nudeln kochen.","Knoblauch kurz anbraten.","Nudeln hinzufügen.","Parmesan darüber geben."]
+},
+
+{
+name:"🍳 Gemüse-Rührei",
+category:"Ei",
+time:12,
+calories:330,
+ingredients:[
+["Eier",3,"Stück"],
+["Paprika",1,"Stück"],
+["Tomaten",1,"Stück"],
+["Zwiebel",0.5,"Stück"]
+],
+steps:["Gemüse schneiden.","Gemüse anbraten.","Eier verquirlen.","Eier hinzufügen.","Stocken lassen."]
+},
+
+{
+name:"🌯 Beef-Wrap",
+category:"Wrap",
+time:20,
+calories:580,
+ingredients:[
+["Wrap",1,"Stück"],
+["Rinderhackfleisch",100,"g"],
+["Salat",50,"g"],
+["Tomaten",1,"Stück"]
+],
+steps:["Hackfleisch braten.","Tomaten schneiden.","Wrap erwärmen.","Alles darauf verteilen.","Zusammenrollen."]
+}
+
+];
+
+const ingredientList=[
+"Hähnchenbrust","Reis","Nudeln","Eier","Kartoffeln",
+"Tomaten","Paprika","Zwiebel","Käse","Salat",
+"Thunfisch","Wrap","Gurke","Erbsen","Karotten",
+"Schinken","Pesto","Parmesan","Brot","Quark",
+"Mozzarella","Rinderhackfleisch"
+];
+
+let selectedIngredients=[];
+let currentCategory="Alle";
+
+let shoppingList=
+JSON.parse(localStorage.getItem("shoppingList")||"[]");
+
+let favorites=
+JSON.parse(localStorage.getItem("favorites")||"[]");
+
+
+const ingredientButtons=
+document.getElementById("ingredientButtons");
+
+ingredientList.forEach(item=>{
+
+const el=document.createElement("div");
+
+el.className="ingredient";
+el.textContent=item;
+
+el.onclick=()=>{
+
+el.classList.toggle("selected");
+
+if(selectedIngredients.includes(item)){
+selectedIngredients=
+selectedIngredients.filter(x=>x!==item);
+}else{
+selectedIngredients.push(item);
+}
+
+};
+
+ingredientButtons.appendChild(el);
+
+});
+
+
+function setCategory(category,button){
+
+currentCategory=category;
+
+document.querySelectorAll(".category")
+.forEach(x=>x.classList.remove("active"));
+
+button.classList.add("active");
+
+showRecipes();
+
+}
+
+
+function showRecipes(){
+
+const search=
+document.getElementById("search").value.toLowerCase();
+
+const maxCalories=
+Number(document.getElementById("calorieFilter").value);
+
+const maxTime=
+Number(document.getElementById("timeFilter").value);
+
+let results=recipes.filter(recipe=>{
+
+const matchesSearch=
+recipe.name.toLowerCase().includes(search) ||
+recipe.ingredients.some(x=>
+x[0].toLowerCase().includes(search));
+
+const matchesCategory=
+currentCategory==="Alle" ||
+recipe.category===currentCategory;
+
+return
+recipe.calories<=maxCalories &&
+recipe.time<=maxTime &&
+matchesSearch &&
+matchesCategory;
+
+});
+
+
+if(selectedIngredients.length>0){
+
+results=results
+.map(recipe=>{
+
+let matches=recipe.ingredients.filter(x=>
+selectedIngredients.includes(x[0])
+).length;
+
+return {...recipe,matches};
+
+})
+.filter(x=>x.matches>0)
+.sort((a,b)=>b.matches-a.matches);
+
+}
+
+renderRecipes(results);
+
+}
+
+
+function renderRecipes(results){
+
+const container=
+document.getElementById("results");
+
+container.innerHTML="";
+
+if(results.length===0){
+
+container.innerHTML=
+`<div class="card empty">
+😕 Kein passendes Rezept gefunden.<br><br>
+Versuche andere Zutaten oder Filter.
+</div>`;
+
+return;
+
+}
+
+results.forEach(recipe=>{
+
+container.innerHTML+=recipeHTML(recipe);
+
+});
+
+}
+
+
+function recipeHTML(recipe){
+
+const favorite=
+favorites.includes(recipe.name);
+
+return`
+
+<div class="recipe">
+
+<h3>${recipe.name}</h3>
+
+<div class="info">
+<span>⏱️ ${recipe.time} Min.</span>
+<span>🔥 ${recipe.calories} kcal</span>
+<span class="badge">${recipe.category}</span>
+</div>
+
+<h4>👥 Portionen</h4>
+
+<div class="portions">
+
+<button onclick="changePortions('${recipe.name}',-1)">−</button>
+
+<span id="portion-${safeId(recipe.name)}">1</span>
+
+<button onclick="changePortions('${recipe.name}',1)">+</button>
+
+</div>
+
+<h4>🛒 Zutaten</h4>
+
+<ul id="ingredients-${safeId(recipe.name)}">
+
+${recipe.ingredients.map(x=>
+`<li>${formatAmount(x[1],x[2])} ${x[0]}</li>`
+).join("")}
+
+</ul>
+
+<h4>👨‍🍳 Zubereitung</h4>
+
+<ol>
+${recipe.steps.map(x=>`<li>${x}</li>`).join("")}
+</ol>
+
+<button class="green"
+onclick="addToShopping('${recipe.name}')">
+🛒 Zur Einkaufsliste
+</button>
+
+<button class="favorite"
+onclick="toggleFavorite('${recipe.name}')">
+${favorite?"💔 Aus Favoriten entfernen":"❤️ Favorit speichern"}
+</button>
+
+</div>
+
+`;
+
+}
+
+
+let portions={};
+
+
+function safeId(name){
+return name.replace(/[^a-zA-Z0-9]/g,"");
+}
+
+
+function changePortions(name,direction){
+
+if(!portions[name]) portions[name]=1;
+
+portions[name]+=direction;
+
+if(portions[name]<1) portions[name]=1;
+if(portions[name]>6) portions[name]=6;
+
+const recipe=
+recipes.find(x=>x.name===name);
+
+const id=safeId(name);
+
+const portionElement=
+document.getElementById("portion-"+id);
+
+if(portionElement)
+portionElement.textContent=portions[name];
+
+const list=
+document.getElementById("ingredients-"+id);
+
+if(list){
+
+list.innerHTML=
+recipe.ingredients.map(x=>
+`<li>${formatAmount(x[1]*portions[name],x[2])} ${x[0]}</li>`
+).join("");
+
+}
+
+}
+
+
+function formatAmount(amount,unit){
+
+if(amount===0.5)
+return "½ "+unit;
+
+if(amount%1===0)
+return amount+" "+unit;
+
+return amount.toFixed(1)+" "+unit;
+
+}
+
+
+function addToShopping(name){
+
+const recipe=
+recipes.find(x=>x.name===name);
+
+const multiplier=
+portions[name]||1;
+
+recipe.ingredients.forEach(item=>{
+
+const existing=
+shoppingList.find(x=>x.name===item[0]);
+
+if(existing){
+
+existing.amount+=item[1]*multiplier;
+
+}else{
+
+shoppingList.push({
+name:item[0],
+amount:item[1]*multiplier,
+unit:item[2],
+done:false
+});
+
+}
+
+});
+
+saveShoppingList();
+
+alert("🛒 Zutaten wurden hinzugefügt!");
+
+}
+
+
+function saveShoppingList(){
+
+localStorage.setItem(
+"shoppingList",
+JSON.stringify(shoppingList)
+);
+
+renderShoppingList();
+
+}
+
+
+function renderShoppingList(){
+
+const container=
+document.getElementById("shoppingList");
+
+container.innerHTML="";
+
+if(shoppingList.length===0){
+
+container.innerHTML=
+`<div class="empty">
+Deine Einkaufsliste ist leer.
+</div>`;
+
+return;
+
+}
+
+shoppingList.forEach((item,index)=>{
+
+container.innerHTML+=`
+
+<div class="shop ${item.done?"done":""}">
+
+<input
+type="checkbox"
+${item.done?"checked":""}
+onchange="toggleShop(${index})">
+
+<span>
+${formatAmount(item.amount,item.unit)}
+${item.name}
+</span>
+
+<button
+class="delete red"
+onclick="removeShop(${index})">
+🗑️
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+
+function toggleShop(index){
+
+shoppingList[index].done=
+!shoppingList[index].done;
+
+saveShoppingList();
+
+}
+
+
+function removeShop(index){
+
+shoppingList.splice(index,1);
+
+saveShoppingList();
+
+}
+
+
+function clearShoppingList(){
+
+if(confirm("Einkaufsliste wirklich löschen?")){
+
+shoppingList=[];
+
+saveShoppingList();
+
+}
+
+}
+
+
+function toggleFavorite(name){
+
+if(favorites.includes(name)){
+
+favorites=
+favorites.filter(x=>x!==name);
+
+}else{
+
+favorites.push(name);
+
+}
+
+localStorage.setItem(
+"favorites",
+JSON.stringify(favorites)
+);
+
+showRecipes();
+renderFavorites();
+
+}
+
+
+function renderFavorites(){
+
+const container=
+document.getElementById("favorites");
+
+container.innerHTML="";
+
+if(favorites.length===0){
+
+container.innerHTML=
+`<div class="empty">
+Noch keine Favoriten ❤️
+</div>`;
+
+return;
+
+}
+
+favorites.forEach(name=>{
+
+const recipe=
+recipes.find(x=>x.name===name);
+
+if(recipe)
+container.innerHTML+=recipeHTML(recipe);
+
+});
+
+}
+
+
+function randomRecipe(){
+
+const maxCalories=
+Number(document.getElementById("calorieFilter").value);
+
+const maxTime=
+Number(document.getElementById("timeFilter").value);
+
+const possible=
+recipes.filter(x=>
+x.calories<=maxCalories &&
+x.time<=maxTime
+);
+
+if(possible.length===0)return;
+
+const recipe=
+possible[Math.floor(Math.random()*possible.length)];
+
+document.getElementById("results").innerHTML=
+recipeHTML(recipe);
+
+window.scrollTo({
+top:document.getElementById("results").offsetTop,
+behavior:"smooth"
+});
+
+}
+
+
+showRecipes();
+renderShoppingList();
+renderFavorites();
+
+</script>
+
+</body>
+</html>
